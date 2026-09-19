@@ -2,6 +2,7 @@
 
 ## ACTIVE / LIVE
 
+- **DONE** `TZ-NX-ORDER-CREATE-REQUIRES-ORG` · agent_id: freebuff · order create Organization guard
 - **DONE** `TZ-NX-PROPOSALS-CREATE-REQUIRES-ORG` · agent_id: freebuff · proposal Studio create guard
 - **DONE** `TZ-NX-ORG-REQUIRED-SHARED` · shared helper + Studio migration
 - **PASS** studio org-required `a28a2423`

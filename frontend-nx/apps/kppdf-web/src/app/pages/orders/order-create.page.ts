@@ -7,6 +7,8 @@ import {
   PiOrganizationsService,
   PiProductsService,
   PiSitesService,
+  ORGANIZATION_REQUIRED_MESSAGE,
+  isOrganizationsEmpty,
   type Counterparty,
   type OrderItemPayload,
   type Organization,
@@ -54,6 +56,15 @@ interface ItemDraft {
       }
 
       @if (status() === 'ready') {
+        @if (organizationRequired()) {
+          <app-pi-status-banner
+            tone="warning"
+            [message]="organizationRequiredMessage"
+            actionLabel="Создать фирму"
+            (action)="openOrganizations()"
+            data-test="order-organization-required"
+          />
+        }
         <form class="space-y-6 max-w-2xl" (submit)="onFormSubmit($event)">
           @if (error()) {
             <app-pi-status-banner tone="destructive" [message]="error()" data-test="order-error" />
@@ -185,6 +196,8 @@ export class OrderCreatePage implements OnInit {
   readonly status = signal<'loading' | 'ready' | 'error'>('loading');
   readonly saving = signal(false);
   readonly error = signal('');
+  readonly organizationRequired = signal(false);
+  readonly organizationRequiredMessage = ORGANIZATION_REQUIRED_MESSAGE;
 
   ngOnInit(): void {
     void this.load();
@@ -204,6 +217,7 @@ export class OrderCreatePage implements OnInit {
     this.counterparties.set(customers.data?.items ?? []);
     this.products.set(products.ok ? (products.data?.items ?? []) : []);
     this.organizations.set(orgs.ok ? (orgs.data?.items ?? []) : []);
+    this.organizationRequired.set(!orgs.ok || isOrganizationsEmpty(orgs.data));
     this.status.set('ready');
   }
 
@@ -228,7 +242,8 @@ export class OrderCreatePage implements OnInit {
 
   canSubmit(): boolean {
     return (
-      this.customerId().length > 0
+      !this.organizationRequired()
+      && this.customerId().length > 0
       && this.items().some((row) => row.productId.length > 0 && row.quantity > 0)
       && !this.saving()
     );
@@ -237,6 +252,10 @@ export class OrderCreatePage implements OnInit {
   onFormSubmit(event: Event): void {
     event.preventDefault();
     void this.save();
+  }
+
+  openOrganizations(): void {
+    void this.router.navigate(['/registries/organizations']);
   }
 
   async save(): Promise<void> {

@@ -44,10 +44,19 @@ describe('OrderCreatePage (TZ-NX-SALES-S36-ORDER-CREATE)', () => {
     limit: 25,
   };
 
-  async function setup(): Promise<void> {
+  async function setup(emptyOrganizations = false): Promise<void> {
     counterpartiesApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: counterparties })) };
     productsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: products })) };
-    organizationsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: organizations })) };
+    organizationsApi = {
+      list: jest.fn().mockReturnValue(
+        of({
+          ok: true,
+          data: emptyOrganizations
+            ? { items: [], total: 0, page: 1, limit: 25 }
+            : organizations,
+        }),
+      ),
+    };
     sitesApi = { ensureDefault: jest.fn() };
     ordersApi = { create: jest.fn() };
     await TestBed.configureTestingModule({
@@ -113,6 +122,25 @@ describe('OrderCreatePage (TZ-NX-SALES-S36-ORDER-CREATE)', () => {
     const customerOptions = fixture.nativeElement.querySelectorAll('[data-test="order-customer"] option');
     expect(customerOptions.length).toBeGreaterThanOrEqual(2);
     expect(fixture.nativeElement.textContent).toContain('ООО Пример');
+  });
+
+  it('shows the Organization-required banner, blocks submit, and links to the registry when no firms exist', async () => {
+    await setup(true);
+    await settle();
+
+    expect(fixture.componentInstance.organizationRequired()).toBe(true);
+    expect(fixture.nativeElement.querySelector('[data-test="order-organization-required"]')?.textContent).toContain('Нет организации');
+    expect(fixture.componentInstance.canSubmit()).toBe(false);
+
+    const banner = fixture.nativeElement.querySelector('[data-test="order-organization-required"]');
+    (banner.querySelector('button') as HTMLButtonElement).click();
+    expect(router.navigate).toHaveBeenCalledWith(['/registries/organizations']);
+
+    await pickCustomer('cp-1');
+    await addItem('p-1', 1);
+    await submit();
+    expect(sitesApi.ensureDefault).not.toHaveBeenCalled();
+    expect(ordersApi.create).not.toHaveBeenCalled();
   });
 
   it('does not POST anything when no counterparty is selected', async () => {
