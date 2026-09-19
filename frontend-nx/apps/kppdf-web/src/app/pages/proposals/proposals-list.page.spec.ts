@@ -44,7 +44,7 @@ describe('ProposalsListPage (TZ-NX-SALES-S37-QUOTATION-CONVERT)', () => {
     studioApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] } satisfies SilentResult<StudioDocument[]>)) };
     docTypesApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [{ _id: 'dt-kp', name: 'КП', slug: 'proposal' }] })) };
     organizationsApi = {
-      list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 100 } })),
+      list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [{ _id: 'org-1', name: 'Наша фирма', inn: '7701234567', type: [] }], total: 1, page: 1, limit: 1 } })),
     };
     toast = { error: jest.fn(), success: jest.fn() };
     await TestBed.configureTestingModule({
@@ -95,7 +95,7 @@ describe('ProposalsListPage (TZ-NX-SALES-S37-QUOTATION-CONVERT)', () => {
     studioApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] } satisfies SilentResult<StudioDocument[]>)) };
     docTypesApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [{ _id: 'dt-kp', name: 'КП', slug: 'proposal' }] })) };
     organizationsApi = {
-      list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 100 } })),
+      list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [{ _id: 'org-1', name: 'Наша фирма', inn: '7701234567', type: [] }], total: 1, page: 1, limit: 1 } })),
     };
     toast = { error: jest.fn(), success: jest.fn() };
     await TestBed.configureTestingModule({
@@ -217,7 +217,7 @@ describe('ProposalsListPage — create in studio (TZ-NX-DOCSTUDIO-S33-CREATE-KP-
     };
     docTypesApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [{ _id: 'dt-kp', name: 'КП', slug: 'proposal' }] })) };
     organizationsApi = {
-      list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 100 } })),
+      list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [{ _id: 'org-1', name: 'Наша фирма', inn: '7701234567', type: [] }], total: 1, page: 1, limit: 1 } })),
     };
     toast = { error: jest.fn(), success: jest.fn() };
     await TestBed.configureTestingModule({
@@ -256,6 +256,25 @@ describe('ProposalsListPage — create in studio (TZ-NX-DOCSTUDIO-S33-CREATE-KP-
 
     expect(studioApi.create).toHaveBeenCalledWith(expect.objectContaining({ docTypeId: 'dt-kp' }));
     expect(router.navigate).toHaveBeenCalledWith(['/studio', 'doc-1']);
+  });
+
+  it('blocks studio creation and offers an organizations CTA when no firms exist', async () => {
+    await setup();
+    organizationsApi.list.mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 1 } }));
+
+    (fixture.nativeElement.querySelector('[data-test="proposals-create"]') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const banner = fixture.nativeElement.querySelector('[data-test="proposals-organization-required"]');
+    expect(banner?.textContent).toContain('Нет организации');
+    expect(banner?.textContent).toContain('Создать фирму');
+    expect(studioApi.create).not.toHaveBeenCalled();
+    expect(docTypesApi.list).not.toHaveBeenCalled();
+
+    (banner?.querySelector('button') as HTMLButtonElement).click();
+    expect(router.navigate).toHaveBeenCalledWith(['/registries/organizations']);
+    expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('Нет организации'));
   });
 
   it('falls back to the plain studio list when the КП doc type is missing', async () => {
@@ -306,7 +325,7 @@ describe('ProposalsListPage — KP family list (TZ-NX-KP-FAMILY-S42-LIST-HIDE-VA
     studioApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] } satisfies SilentResult<StudioDocument[]>)) };
     docTypesApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [{ _id: 'dt-kp', name: 'КП', slug: 'proposal' }] })) };
     organizationsApi = {
-      list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 100 } })),
+      list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [{ _id: 'org-1', name: 'Наша фирма', inn: '7701234567', type: [] }], total: 1, page: 1, limit: 1 } })),
     };
     toast = { error: jest.fn(), success: jest.fn() };
     await TestBed.configureTestingModule({

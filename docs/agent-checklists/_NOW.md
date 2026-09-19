@@ -1,13 +1,14 @@
-﻿updated_at: 2026-09-18T06:20:00+03:00
+﻿updated_at: 2026-09-19T12:30:00+03:00
 
 ## ACTIVE / LIVE
 
-- **DEPLOY-READY: READY** (NX warm) — tip product `a2295b7f`  
-  Evidence: `docs/agent-checklists/PRE-DEPLOY-2026-09-18-NX.md`  
-  PO → любому агенту: **«сделай деплой по документации»**
-- Freebuff/Claude: IDLE (очередь продукта пуста до деплоя)
-- Claude weekly limit: ~19 Sep (if still)
+- **DONE** `TZ-NX-PROPOSALS-CREATE-REQUIRES-ORG` · agent_id: freebuff · proposal Studio create guard
+- **DONE** `TZ-NX-ORG-REQUIRED-SHARED` · shared helper + Studio migration
+- **PASS** studio org-required `a28a2423`
+- **Freebuff NEXT:** org-required на КП + заказ
+  `tasks/_ready/PROMPT-FREEBUFF-ORG-REQUIRED-CREATE.md`
+- Старые PRINT/GANTT/AUTH/QA промпты — **не брать** (DONE)
 
 ## PARK
 
-forms · Deploy executed only after PO phrase above
+forms · Wipe · runtime smoke pack (после этой волны)

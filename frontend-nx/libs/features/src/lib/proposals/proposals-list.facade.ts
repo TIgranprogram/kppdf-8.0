@@ -12,6 +12,8 @@ import { firstValueFrom } from 'rxjs';
 import {
   PiDocTypesService,
   PiOrganizationsService,
+  ORGANIZATION_REQUIRED_MESSAGE,
+  isOrganizationsEmpty,
   PiQuotationsService,
   PiStudioDocumentsService,
   quotationCounterpartyName,
@@ -63,6 +65,7 @@ export class ProposalsListFacade {
   readonly error = signal('Не удалось загрузить КП.');
   readonly convertingId = signal<string | null>(null);
   readonly pdfLoadingId = signal<string | null>(null);
+  readonly organizationRequired = signal(false);
 
   /** KP family expand (S43) — one open panel at a time, per-row cache. */
   readonly expandedFamilyId = signal<string | null>(null);
@@ -231,6 +234,21 @@ export class ProposalsListFacade {
 
   /** «Создать в студии» — same КП path as studio-list's «Новое КП»: pre-selects the КП doc type up front. */
   createInStudio(): void {
+    void firstValueFrom(this.organizationsApi.list({ limit: 1 })).then((organizations) => {
+      if (!organizations.ok || isOrganizationsEmpty(organizations.data)) {
+        this.organizationRequired.set(true);
+        this.toast.error(ORGANIZATION_REQUIRED_MESSAGE);
+        return;
+      }
+      this.loadDocTypeAndCreateInStudio();
+    });
+  }
+
+  openOrganizations(): void {
+    void this.router.navigate(['/registries/organizations']);
+  }
+
+  private loadDocTypeAndCreateInStudio(): void {
     void firstValueFrom(this.docTypesApi.list()).then((result) => {
       const kpDocType = result.ok ? findKpDocType(result.data) : undefined;
       if (!kpDocType) {

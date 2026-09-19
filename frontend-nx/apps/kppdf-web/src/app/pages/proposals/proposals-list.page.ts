@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import type { Quotation, QuotationFamilyMemberSummary } from '@kppdf/data-access';
+import { ORGANIZATION_REQUIRED_MESSAGE, type Quotation, type QuotationFamilyMemberSummary } from '@kppdf/data-access';
 import { BadgeComponent } from '@kppdf/ui/badge';
 import { ButtonComponent } from '@kppdf/ui/button';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
@@ -30,6 +30,15 @@ import { ProposalsListFacade } from '@kppdf/features/proposals';
           Создать в студии
         </app-pi-button>
       </div>
+      @if (organizationRequired()) {
+        <app-pi-status-banner
+          tone="warning"
+          [message]="organizationRequiredMessage"
+          actionLabel="Создать фирму"
+          (action)="openOrganizations()"
+          data-test="proposals-organization-required"
+        />
+      }
       @if (status() === 'loading') {
         <div class="text-sm text-muted-foreground">Загрузка…</div>
       }
@@ -155,6 +164,8 @@ export class ProposalsListPage {
   protected readonly error = this.facade.error;
   protected readonly convertingId = this.facade.convertingId;
   protected readonly pdfLoadingId = this.facade.pdfLoadingId;
+  protected readonly organizationRequired = this.facade.organizationRequired;
+  protected readonly organizationRequiredMessage = ORGANIZATION_REQUIRED_MESSAGE;
   protected readonly expandedFamilyId = this.facade.expandedFamilyId;
   protected readonly familyByRow = this.facade.familyByRow;
   protected readonly familyLoadingId = this.facade.familyLoadingId;
@@ -195,6 +206,10 @@ export class ProposalsListPage {
 
   createInStudio(): void {
     this.facade.createInStudio();
+  }
+
+  openOrganizations(): void {
+    this.facade.openOrganizations();
   }
 
   openInStudio(quotation: Quotation): void {
