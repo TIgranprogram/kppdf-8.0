@@ -4,9 +4,12 @@ import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
 import { ButtonComponent } from '@kppdf/ui/button';
 import { CheckboxComponent } from '@kppdf/ui/checkbox';
 import { PiPageChromeComponent } from '@kppdf/ui/page';
-import { StudioListFacade, STUDIO_NO_SAVED_TEMPLATES_MESSAGE } from '@kppdf/features/doc-studio';
+import {
+  StudioListFacade,
+  STUDIO_ORGANIZATION_REQUIRED_MESSAGE,
+} from '@kppdf/features/doc-studio';
 
-export { STUDIO_NO_SAVED_TEMPLATES_MESSAGE } from '@kppdf/features/doc-studio';
+export { STUDIO_NO_SAVED_TEMPLATES_MESSAGE, STUDIO_ORGANIZATION_REQUIRED_MESSAGE } from '@kppdf/features/doc-studio';
 
 @Component({
   selector: 'pi-studio-list-page',
@@ -22,6 +25,15 @@ export { STUDIO_NO_SAVED_TEMPLATES_MESSAGE } from '@kppdf/features/doc-studio';
         <app-pi-button variant="secondary" type="button" data-test="studio-create-from-template" (click)="createFromTemplate()">Из шаблона</app-pi-button>
         <app-pi-button variant="default" type="button" data-test="studio-create" (click)="create()">Создать документ</app-pi-button>
       </div>
+      @if (organizationRequired()) {
+        <app-pi-status-banner
+          tone="warning"
+          [message]="organizationRequiredMessage"
+          actionLabel="Создать фирму"
+          (action)="openOrganizations()"
+          data-test="studio-organization-required"
+        />
+      }
       @if (status() === 'loading') { <div class="text-sm text-muted-foreground">Загрузка…</div> }
       @if (status() === 'error') { <app-pi-status-banner tone="destructive" [message]="error()" actionLabel="Повторить" (action)="load()" /> }
       @if (status() === 'success') {
@@ -77,6 +89,8 @@ export class StudioListPage implements OnInit {
   readonly selectedIds = this.facade.selectedIds;
   readonly allVisibleSelected = this.facade.allVisibleSelected;
   readonly someVisibleSelected = this.facade.someVisibleSelected;
+  readonly organizationRequired = this.facade.organizationRequired;
+  readonly organizationRequiredMessage = STUDIO_ORGANIZATION_REQUIRED_MESSAGE;
 
   ngOnInit(): void { this.facade.load(); }
   load(): void { this.facade.load(); }
@@ -86,6 +100,7 @@ export class StudioListPage implements OnInit {
   createFromTemplate(): void { this.facade.createFromTemplate(); }
   duplicate(document: Parameters<StudioListFacade['duplicate']>[0]): void { this.facade.duplicate(document); }
   create(): void { this.facade.create(); }
+  openOrganizations(): void { this.facade.openOrganizations(); }
   documentStatusLabel(status: string): string { return this.facade.documentStatusLabel(status); }
   formatUpdatedAt(value?: string): string { return this.facade.formatUpdatedAt(value); }
   open(document: Parameters<StudioListFacade['open']>[0]): void { this.facade.open(document); }

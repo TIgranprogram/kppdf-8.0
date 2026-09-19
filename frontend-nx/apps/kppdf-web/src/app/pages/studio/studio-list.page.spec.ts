@@ -6,6 +6,7 @@ import { of } from 'rxjs';
 import {
   PiDocTypesService,
   PiDocumentTemplatesService,
+  PiOrganizationsService,
   PiStudioDocumentsService,
   type StudioDocument,
 } from '@kppdf/data-access';
@@ -18,6 +19,7 @@ import { StudioCreateDoctypeDialogComponent, type StudioCreateDoctypeResult } fr
 describe('StudioListPage — create document CTAs', () => {
   let fixture: ComponentFixture<StudioListPage>;
   let service: { list: jest.Mock; create: jest.Mock; remove: jest.Mock };
+  let organizationsApi: { list: jest.Mock };
   let documentTemplates: { list: jest.Mock };
   let docTypesApi: { list: jest.Mock };
   let dialog: { open: jest.Mock };
@@ -29,6 +31,9 @@ describe('StudioListPage — create document CTAs', () => {
       list: jest.fn().mockReturnValue(of({ ok: true, data: documents } satisfies SilentResult<StudioDocument[]>)),
       create: jest.fn(),
       remove: jest.fn().mockReturnValue(of({ ok: true, data: undefined } satisfies SilentResult<void>)),
+    };
+    organizationsApi = {
+      list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [{ _id: 'org-1', name: 'ООО Тест', inn: '7701234567', type: [] }], total: 1, page: 1, limit: 1 } })),
     };
     documentTemplates = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
     docTypesApi = {
@@ -53,6 +58,7 @@ describe('StudioListPage — create document CTAs', () => {
         { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: { get: () => null } } } },
         { provide: PiStudioDocumentsService, useValue: service },
         { provide: PiDocumentTemplatesService, useValue: documentTemplates },
+        { provide: PiOrganizationsService, useValue: organizationsApi },
         { provide: PiDocTypesService, useValue: docTypesApi },
         { provide: PiDialogService, useValue: dialog },
         { provide: PiToastService, useValue: toast },
@@ -125,6 +131,25 @@ describe('StudioListPage — create document CTAs', () => {
       expect.stringContaining('Нет сохранённых шаблонов'),
     );
     expect(dialog.open).not.toHaveBeenCalled();
+  });
+
+  it('blocks create and shows an organization CTA when no firms exist', async () => {
+    await setup();
+    organizationsApi.list.mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 1 } }));
+
+    (fixture.nativeElement.querySelector('[data-test="studio-create"]') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const banner = fixture.nativeElement.querySelector('[data-test="studio-organization-required"]');
+    expect(banner?.textContent).toContain('Нет организации');
+    expect(banner?.textContent).toContain('Создать фирму');
+    expect(docTypesApi.list).not.toHaveBeenCalled();
+    expect(service.create).not.toHaveBeenCalled();
+
+    (banner?.querySelector('button') as HTMLButtonElement).click();
+    expect(router.navigate).toHaveBeenCalledWith(['/registries/organizations']);
+    expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('Нет организации'));
   });
 
   it('requires an explicit doc type from the create-doctype dialog for «Создать документ»', async () => {

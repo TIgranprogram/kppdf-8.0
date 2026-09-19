@@ -7,6 +7,7 @@ import { PiToastService } from '@kppdf/ui/toast';
 import {
   PiDocTypesService,
   PiDocumentTemplatesService,
+  PiOrganizationsService,
   PiStudioDocumentsService,
   type DocType,
   type DocumentTemplate,
@@ -33,6 +34,9 @@ export const STUDIO_DOCUMENT_STATUS_LABELS: Record<string, string> = {
 export const STUDIO_NO_SAVED_TEMPLATES_MESSAGE =
   'Нет сохранённых шаблонов — сохраните из студии (Шаблон → Сохранить как шаблон)';
 
+export const STUDIO_ORGANIZATION_REQUIRED_MESSAGE =
+  'Нет организации: создайте фирму в Админ → Наши организации.';
+
 function pluralizeDocuments(n: number): string {
   const mod10 = n % 10;
   const mod100 = n % 100;
@@ -46,6 +50,7 @@ function pluralizeDocuments(n: number): string {
 export class StudioListFacade {
   private readonly service = inject(PiStudioDocumentsService);
   private readonly documentTemplates = inject(PiDocumentTemplatesService);
+  private readonly organizationsApi = inject(PiOrganizationsService);
   private readonly docTypesApi = inject(PiDocTypesService);
   private readonly router = inject(Router);
   private readonly dialog = inject(PiDialogService);
@@ -67,6 +72,7 @@ export class StudioListFacade {
   });
 
   readonly selectedIds = signal<ReadonlySet<string>>(new Set());
+  readonly organizationRequired = signal(false);
   readonly allVisibleSelected = computed(() => {
     const docs = this.filteredDocuments();
     return docs.length > 0 && docs.every((d) => this.selectedIds().has(d._id));
@@ -173,6 +179,21 @@ export class StudioListFacade {
   }
 
   create(): void {
+    void firstValueFrom(this.organizationsApi.list({ limit: 1 })).then((organizations) => {
+      if (organizations.ok && organizations.data.total === 0) {
+        this.organizationRequired.set(true);
+        this.toast.error(STUDIO_ORGANIZATION_REQUIRED_MESSAGE);
+        return;
+      }
+      this.loadDocumentTypesForCreate();
+    });
+  }
+
+  openOrganizations(): void {
+    void this.router.navigate(['/registries/organizations']);
+  }
+
+  private loadDocumentTypesForCreate(): void {
     void firstValueFrom(this.docTypesApi.list()).then((result) => {
       if (!result.ok) { this.toast.error(String(result.error)); return; }
       if (result.data.length === 0) { this.toast.error('Нет доступных типов документов'); return; }
