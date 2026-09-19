@@ -9,6 +9,8 @@ import {
   PiDocumentTemplatesService,
   PiOrganizationsService,
   PiStudioDocumentsService,
+  isOrganizationsEmpty,
+  ORGANIZATION_REQUIRED_MESSAGE,
   type DocType,
   type DocumentTemplate,
   type StudioDocument,
@@ -34,8 +36,7 @@ export const STUDIO_DOCUMENT_STATUS_LABELS: Record<string, string> = {
 export const STUDIO_NO_SAVED_TEMPLATES_MESSAGE =
   'Нет сохранённых шаблонов — сохраните из студии (Шаблон → Сохранить как шаблон)';
 
-export const STUDIO_ORGANIZATION_REQUIRED_MESSAGE =
-  'Нет организации: создайте фирму в Админ → Наши организации.';
+export const STUDIO_ORGANIZATION_REQUIRED_MESSAGE = ORGANIZATION_REQUIRED_MESSAGE;
 
 function pluralizeDocuments(n: number): string {
   const mod10 = n % 10;
@@ -180,7 +181,7 @@ export class StudioListFacade {
 
   create(): void {
     void firstValueFrom(this.organizationsApi.list({ limit: 1 })).then((organizations) => {
-      if (organizations.ok && organizations.data.total === 0) {
+      if (organizations.ok && isOrganizationsEmpty(organizations.data)) {
         this.organizationRequired.set(true);
         this.toast.error(STUDIO_ORGANIZATION_REQUIRED_MESSAGE);
         return;
