@@ -112,6 +112,8 @@ IP allowlist — только запасной костыль, не страте
 2. **Сделано 2026-08-11 (TZ-OPS-310):** SUID/SGID inventory VPS+VM, порты, UFW, tunnel, htpasswd 640 — evidence `docs/ops/server-harden-evidence.md`, archive `tasks/_archive/2026-08/TZ-OPS-310.done.md`.
 3. **Сделано 2026-08-15 (TZ-AUTH-305 cutover):** UI `/` за `auth_request` → `GET /api/device/auth-check` (cookie `__Host-kppdf-device`). `/enroll/` + статика + `/api/` — без Basic и без `auth_request`. Без cookie → **401** plain text, **без** `WWW-Authenticate: Basic`. Evidence: `docs/ops/server-harden-evidence.md` § AUTH-305.
 4. **NEXT (доступ):** `TZ-AUTH-307` cleanup (htpasswd/docs) по решению PO; password login owner — break-glass через API + новая owner-ссылка «Добавить мой компьютер»; **без** IP-allowlist.
+   **Как выпустить такую ссылку руками (без подключённого браузера и без NAS):**
+   [`docs/ops/ENROLL-LINK-RUNBOOK.md`](./ENROLL-LINK-RUNBOOK.md).
 5. Приглашённые устройства входят по одноразовой ссылке без подъезда и без app-пароля (роль задана в инвайте).
 6. Cloudflare Access — **не** первый шаг, пока DNS/прокси не на Cloudflare.
 7. Tailscale (§7) — этап «совсем не публичный»; не путать с ключом в браузере.

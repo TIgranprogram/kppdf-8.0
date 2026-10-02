@@ -74,6 +74,13 @@ invite — только явная кнопка «Подключить» шлё�
 - GET не consume; повторное использование ссылки → 409.
 - Все тексты на русском.
 
+## Ops
+
+- **Выпустить новую ссылку** (истёк срок / пропал доступ, без подключённого браузера):
+  [`docs/ops/ENROLL-LINK-RUNBOOK.md`](../ops/ENROLL-LINK-RUNBOOK.md) — login →
+  `POST /api/admin/devices/owner-invite` → smoke; секреты берутся из gitignored
+  `deploy/synology/config.env` и не попадают в git.
+
 ---
 
 _Создано: 2026-08-13 (TZ-AUTH-304)._
