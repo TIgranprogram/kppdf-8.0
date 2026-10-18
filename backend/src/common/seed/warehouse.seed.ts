@@ -39,6 +39,11 @@ export class WarehouseSeed implements OnApplicationBootstrap {
   ) {}
 
   async onApplicationBootstrap(): Promise<void> {
+    // Склады по умолчанию — только для совсем пустой базы (первый запуск). Раньше сид искал
+    // склад по имени и пересоздавал «удалённый» (soft-delete скрывает его от findOne) или
+    // переименованный склад при каждом старте. Единая база с data-core: склады ведёт пользователь.
+    // Сырой счётчик коллекции — вместе с помеченными удалёнными.
+    if ((await this.model.collection.countDocuments({})) > 0) return;
     for (const w of DEFAULT_WAREHOUSES) {
       const existing = await this.model.findOne({ name: w.name }).exec();
       if (existing) continue;
