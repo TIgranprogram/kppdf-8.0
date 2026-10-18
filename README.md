@@ -2,7 +2,8 @@
 
 > Цеховой ERP (~10 пользователей): продажи / КП → заказ → снабжение / производство → склад / отгрузка.  
 > Стек: **Angular 20** + **NestJS 10** + **MongoDB 7 Replica Set**. UI: **Paper & Ink** (OKLCH, hairline).  
-> Разработка ведётся ИИ-агентами по executable TZ. GitHub = хранилище кода (без GitHub Actions / Dependabot).
+> Разработка ведётся ИИ-агентами по executable TZ. GitHub = хранилище кода (без GitHub Actions / Dependabot): `TIgranprogram/kppdf-8.0`.
+> ⚠ **Прод с 2026-10-18 — единая база `datacore`** (MongoDB 4.4, контур data-core); своей Mongo у kppdf нет → [`docs/UNIFIED-DB.md`](docs/UNIFIED-DB.md). Агентам — [`AGENTS.md`](AGENTS.md).
 
 ---
 
@@ -79,7 +80,7 @@ ERP для небольшого производства: менеджер ве�
 | Frontend | Angular 20 standalone, Signals, OnPush, TailwindCSS v4, Lucide, TipTap |
 | UI kit | Paper & Ink — `frontend/src/app/shared/ui/*` (без Material / PrimeNG) |
 | Backend | NestJS 10, Mongoose 8, JWT+RBAC, idempotency, audit log |
-| DB | MongoDB 7 Replica Set (`docker compose`) |
+| DB | Локально — MongoDB Replica Set (`docker compose`); **прод — единая база `datacore` контура data-core** (`docs/UNIFIED-DB.md`) |
 | Desktop | Tauri + MCP (`desktop/`) |
 | Package manager | **только pnpm** (отдельно в `backend/` и `frontend/`) |
 

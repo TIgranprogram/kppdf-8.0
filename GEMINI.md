@@ -1,5 +1,7 @@
 # GEMINI.md — рабочий контракт Gemini для kppdf-8.0
 
+> ⚠ **Единая база (с 2026-10-18):** своей MongoDB у kppdf нет — база `datacore` проекта data-core (`D:\data-core`). Задачи про БД/схемы/сиды/деплой/бэкап — сначала [`docs/UNIFIED-DB.md`](docs/UNIFIED-DB.md). Схемы общих коллекций — только синхронно с data-core; `datacore-mongo` не трогать.
+
 Ты работаешь в репозитории `kppdf-8.0`. Минимальный startup:
 `docs/PROJECT-MEMORY.md` → `docs/PO-CANON.md` → `docs/CONTEXT.md` →
 `docs/agent-checklists/_NOW.md` + `tasks/_active/` → собственные TZ/checklist →

@@ -1,5 +1,7 @@
 # KPPDF 8.0 — Установка с нуля
 
+> ⚠ **Единая база с 2026-10-18:** своей MongoDB у kppdf нет — `kppdf-mongo` и `/var/lib/kppdf80/mongodb` удалены; backend работает с базой `datacore` (контейнер `datacore-mongo`, контур data-core `/opt/data-core`). Факты и правила — [`docs/UNIFIED-DB.md`](../../docs/UNIFIED-DB.md). Ниже упоминания старой Mongo исправлены; если встретишь пропущенное — верь UNIFIED-DB.
+
 > Пошаговая инструкция для нового развёртывания.  
 > **Обычный update:** [`README.md`](./README.md) · чеклист [`RUNBOOK.md`](./RUNBOOK.md) · архитектура [`DEPLOY.md`](./DEPLOY.md)
 

@@ -1,5 +1,7 @@
 # CLAUDE.md — рабочий контракт Claude Code для kppdf-8.0
 
+> ⚠ **Единая база (с 2026-10-18):** своей MongoDB у kppdf нет — он работает с базой `datacore` проекта data-core (`D:\data-core`). Перед любой задачей про БД, схемы, сиды, деплой или бэкап прочитай [`docs/UNIFIED-DB.md`](docs/UNIFIED-DB.md) (одна страница). Коротко: схемы общих коллекций — только синхронно с data-core; `datacore-mongo` не трогать; `kppdf-mongo` больше не существует. GitHub: `TIgranprogram/kppdf-8.0`.
+
 ## Режим вызова
 
 1. **Peer (из Cursor через MCP `claude_code`)** — обсуждение, альтернатива, review.

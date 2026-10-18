@@ -57,7 +57,7 @@ copy deploy\synology\CREDENTIALS.example.md deploy\synology\CREDENTIALS.md
 
 ```bash
 sudo docker ps
-# kppdf-mongo, kppdf-backend
+# kppdf-backend (Mongo — datacore-mongo контура data-core, см. docs/UNIFIED-DB.md)
 ```
 
 ---

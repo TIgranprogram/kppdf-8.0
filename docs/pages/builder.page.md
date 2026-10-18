@@ -496,7 +496,7 @@ Shipped on branch `feat/builder-magnetic-grid` (4 atomic commits:
 `d15b5f7` magnetic-grid implementation, `f10a0e2` DOM-contract spec,
 `f1109e6` collapse-per-axis guides, `38e0af7` Nit 3 + 4 polish).
 Branch URL:
-`https://github.com/gostreetogle-create/kppdf-8.0/tree/feat/builder-magnetic-grid`.
+`https://github.com/gostreetogle-create/kppdf-8.0/tree/feat/builder-magnetic-grid` (старый репозиторий, доступа нет; текущий — `TIgranprogram/kppdf-8.0`).
 
 The Конструктор now decorates the canvas with two purely-visual layers
 that interact with the existing snap math in `BlockRendererStateService`

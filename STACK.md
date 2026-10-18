@@ -196,7 +196,7 @@ node start.mjs --prod            # production: build + serve
 
 **Что делает:**
 1. Pre-flight: Node 20+, pnpm 11+, Docker daemon, `.env`, порты
-2. `docker rm -f kppdf-mongo` + `docker compose up -d mongo mongo-init`
+2. (прод) своей Mongo у kppdf нет — база `datacore` контура data-core, см. `docs/UNIFIED-DB.md`; локальный dev-контур — как раньше
 3. Ждёт `rs.status().ok === 1`
 4. `pnpm install` в `backend/` + `frontend/` (если нужно; auto-approve build scripts при `ERR_PNPM_IGNORED_BUILDS`)
 5. `pnpm start:dev` (backend :3000) + `pnpm start` (frontend :4200)

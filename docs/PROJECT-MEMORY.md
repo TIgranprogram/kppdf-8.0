@@ -37,6 +37,7 @@
 | Архитектура / конвенции | `ARCHITECTURE.md` — только при нужде зоны |
 | Синтез 8 версий + финальная архитектура + закрытые бизнес-решения PO (канон) | `docs/architecture/MASTER-CORE.md` |
 | Домен сущности (схема) | `docs/data-model.md` + **живая schema** в `backend/src/modules/<x>/` (схема побеждает) |
+| **База данных, деплой, бэкап** (единая база с data-core) | `docs/UNIFIED-DB.md` — побеждает любые старые упоминания `kppdf-mongo` |
 | UI-страница | `docs/pages/<name>.page.md` |
 | Готовность раздела | `docs/SECTION-READINESS.md` |
 | Способности (included/absent/removed) | `docs/CAPABILITY-LEDGER.md` |
@@ -68,6 +69,7 @@
 ## 5. Не ломать (BAN)
 
 - Не писать SoT молча через MCP — правки проходят через TZ + git.
+- Не менять схемы/индексы общих с data-core коллекций в одиночку и не трогать `datacore-mongo` (`docs/UNIFIED-DB.md`).
 - Не деплоить по FE-прихоти (`deploy.ps1` / `deploy/` — только по явной команде).
 - Не работать в `.freebuff/worktrees/*`. Explicit `.worktrees/<TASK-ID>` допустим
   только для isolated branch по `docs/how-to-connect-ai.md`.

@@ -1,5 +1,7 @@
 # KPPDF 8.0 — Документация деплоя
 
+> ⚠ **Единая база с 2026-10-18:** своей MongoDB у kppdf нет — `kppdf-mongo` и `/var/lib/kppdf80/mongodb` удалены; backend работает с базой `datacore` (контейнер `datacore-mongo`, контур data-core `/opt/data-core`). Факты и правила — [`docs/UNIFIED-DB.md`](../../docs/UNIFIED-DB.md). Ниже упоминания старой Mongo исправлены; если встретишь пропущенное — верь UNIFIED-DB.
+
 > **Source of truth** для деплоя v8.  
 > **Старт:** [`README.md`](./README.md) · чеклист [`RUNBOOK.md`](./RUNBOOK.md)  
 > Секреты: [`CREDENTIALS.md`](./CREDENTIALS.md) (gitignore).  
@@ -43,7 +45,7 @@
 │  │  VM — 192.168.1.52                     │                 │
 │  │                                         │                 │
 │  │  ┌────────────────┐  ┌───────────────┐  │                 │
-│  │  │ kppdf-backend  │  │ kppdf-mongo   │  │                 │
+│  │  │ kppdf-backend  │→ │ datacore-mongo│  │                 │
 │  │  │ :3000 (Docker) │  │ :27017 (Docker)│ │                 │
 │  │  └────────────────┘  └───────────────┘  │                 │
 │  │  /opt/kppdf-8.0/                        │                 │
@@ -59,7 +61,7 @@
 2. VPS nginx:443 (HTTP/2 + SSL) → proxy_pass http://localhost:4200
 3. localhost:4200 → SSH reverse tunnel (autossh systemd)
 4. SSH tunnel → VM localhost:3000 → Docker kppdf-backend
-5. Backend → MongoDB (kppdf-mongo, replica set rs0)
+5. Backend → MongoDB `datacore` (контейнер `datacore-mongo` контура data-core, rs0) — единая база, см. `docs/UNIFIED-DB.md`
 ```
 
 ### Почему туннель
@@ -77,7 +79,7 @@ VPS (193.222.62.240) и VM (192.168.1.52) в разных сетях. Synology N
 | nginx на VPS | ✅ | HTTP/2, SSL, gzip, кеширование статики |
 | SSH tunnel | ✅ | autossh + systemd, автоперезапуск 10 сек |
 | Backend на VM | ✅ | Docker kppdf-backend, healthy |
-| MongoDB на VM | ✅ | Docker kppdf-mongo 4.4, replica set rs0, healthy |
+| MongoDB на VM | ✅ | Единая база `datacore` (`datacore-mongo`, 4.4, rs0) — контур data-core, с 2026-10-18 |
 | CORS | ✅ | http + https kppdf-crm.ru |
 
 ---
@@ -197,7 +199,7 @@ ss -tlnp | grep :4200
 | Контейнер | Образ | Порт | Описание |
 |-----------|-------|------|----------|
 | `kppdf-backend` | kppdf-80-backend | `0.0.0.0:3000` | NestJS API |
-| `kppdf-mongo` | mongo:4.4 | `127.0.0.1:27017` | MongoDB RS |
+| `datacore-mongo` | mongo:4.4 | `127.0.0.1:27018` | MongoDB `datacore` — **контур data-core, не наш compose, не трогать** |
 
 ```bash
 docker ps                                          # статус
@@ -273,11 +275,11 @@ python deploy/synology/deploy.py
 
 1. Сборка FE: `cd frontend-nx && pnpm exec nx build kppdf-web` → копия в `frontend/browser/`  
    (prod static = NX; legacy `pnpm --dir frontend build` больше не вызывается deploy.py, TZ-OPS-DEPLOY-NX-STATIC закрыт).
-2. Архив: `backend/`, `frontend/browser/`, `docker-compose.prod.yml`, `backup.sh`
+2. Архив: `backend/`, `frontend/browser/`, `docker-compose.prod.yml`
 3. SSH (ключ или пароль) → upload в `/opt/kppdf-8.0/`
 4. Запись `.env` из `config.env`
-5. Опционально `--wipe` (app + mongo data) — только по `DANGEROUS-OPS` + фразе PO
-6. `docker compose build backend && up -d` + ожидание rs0
+5. Опционально `--wipe` — только `/opt/kppdf-8.0` и старые `/var/lib/kppdf80/*` (базу не трогает: она в data-core); только по `DANGEROUS-OPS` + фразе PO
+6. `docker compose build backend && up -d` + ожидание healthy `datacore-mongo` (`MONGO_URI` из `config.env` обязателен)
 7. Health `/api/health/ready` + пробный login admin
 
 ---
@@ -332,7 +334,7 @@ certbot renew --dry-run
 | 3 | **ERR_CONNECTION_REFUSED** (порт 443) | SSL не настроен | `certbot --nginx -d kppdf-crm.ru --redirect` |
 | 4 | **CORS error** | URL нет в CORS_ORIGIN | Добавить в `.env` на VM + `--force-recreate backend` |
 | 5 | MongoDB AVX error | CPU Synology без AVX | `mongo:4.4` (уже используется) |
-| 6 | `no replset config` | RS не инициализирован | `docker exec kppdf-mongo mongo --eval "rs.initiate(...)"` |
+| 6 | Backend не подключается к Mongo | Контур data-core не запущен / неверный `MONGO_URI` | `docker ps` → `datacore-mongo` healthy? `cd /opt/data-core && docker compose -f docker-compose.prod.yml up -d mongo`; проверить `MONGO_URI` в `/opt/kppdf-8.0/.env` |
 | 7 | Frontend пуст | `browser/` пуст | `cd frontend-nx && pnpm exec nx build kppdf-web && cp -r dist/apps/kppdf-web/browser/* ../frontend/browser/` |
 | 8 | Сертификат истёк | certbot не обновился | `certbot renew --force-renewal` |
 | 9 | Туннель не переподключается | autossh завис | `sudo systemctl restart kppdf-tunnel` на VM |
@@ -344,17 +346,17 @@ certbot renew --dry-run
 | Путь | Назначение |
 |------|------------|
 | `/opt/kppdf-8.0/` | Код приложения (перезаписывается при деплое) |
-| `/opt/kppdf-8.0/.env` | JWT + CORS конфиг |
+| `/opt/kppdf-8.0/.env` | JWT + CORS + `MONGO_URI` (единая база) |
 | `/opt/kppdf-8.0/docker-compose.prod.yml` | Docker Compose production |
-| `/var/lib/kppdf80/mongodb/` | MongoDB data (сохраняется) |
-| `/var/lib/kppdf80/uploads/` | Загруженные файлы (**volume**, не в git / не в image) |
-| `/var/lib/kppdf80/backups/` | Ручные бэкапы |
+| `/var/lib/datacore/uploads/` | Загруженные файлы — **общие с data-core** (`SHARED_UPLOADS_DIR`) |
+| `/var/lib/datacore/backups/` | Бэкапы единой базы (cron data-core 03:00, 14 дней) |
+| `/var/lib/kppdf80/` | Старые данные kppdf (mongodb удалён 2026-10-18; uploads/backups — история) |
 
 ### Uploads / медиа (важно для деплоя)
 
-- Обычный деплой / rebuild контейнеров **не** удаляет `/var/lib/kppdf80/uploads/`.
-- Флаг `--wipe` / `-Wipe` удаляет mongo **и** uploads — только demo/dev, не на живых данных.
-- Перед рискованными операциями: `backup.sh` (mongo + uploads).
+- Обычный деплой / rebuild контейнеров **не** удаляет `/var/lib/datacore/uploads/`.
+- Флаг `--wipe` / `-Wipe` чистит только `/opt/kppdf-8.0` и старые `/var/lib/kppdf80/*` — общие данные (база, uploads) не трогает.
+- Перед рискованными операциями: `bash /opt/kppdf-8.0/backup.sh` (запускает бэкап единой базы data-core).
 - Канон подпапок:
   - `uploads/document-templates/{templateId}/` — фоны шаблонов;
   - `uploads/template-blocks/{blockId}/` — фото блоков конструктора (**TZ-DOC-333 закрыт**: upload через `POST /template-blocks/:id/image`, в Mongo пишется `/uploads/template-blocks/...`; `blob:`/`data:` в `settings.imageUrl` → 400).

@@ -1,5 +1,7 @@
 # Deploy — KPPDF 8.0 (Synology VM)
 
+> ⚠ **Единая база с 2026-10-18:** своей MongoDB у kppdf нет — `kppdf-mongo` и `/var/lib/kppdf80/mongodb` удалены; backend работает с базой `datacore` (контейнер `datacore-mongo`, контур data-core `/opt/data-core`). Факты и правила — [`docs/UNIFIED-DB.md`](../../docs/UNIFIED-DB.md). Ниже упоминания старой Mongo исправлены; если встретишь пропущенное — верь UNIFIED-DB.
+
 > **Одна точка входа для деплоя.** Секреты не в git: `CREDENTIALS.md` + `config.env`.  
 > **Последний успешный warm deploy:** 2026-08-27 · код `4d55d0ea` · prod `https://kppdf-crm.ru`.  
 > **Цель UI:** после cutover — **NX** (`frontend-nx` → staging `frontend/browser/`). Канон: [`docs/ops/DEPLOY-NX-PROD.md`](../../docs/ops/DEPLOY-NX-PROD.md).  
@@ -65,7 +67,7 @@ PO говорит Cursor: **«подготовь к деплою»**.
 | **`DEPLOY.md`** | Архитектура |
 | **`INSTALL.md`** | Установка с нуля |
 | **`preflight.ps1`** | Проверки (+ OPS-310) |
-| **`backup.sh`** | Бэкап Mongo на VM |
+| **`backup.sh`** | Запускает бэкап единой базы data-core (своей Mongo у kppdf нет) |
 
 Скрипт: `pnpm` build FE → архив → SSH на VM → `docker compose` → health.  
 Данные Mongo **не** трогает (`WIPE=false`).

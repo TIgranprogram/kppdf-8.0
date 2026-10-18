@@ -1,5 +1,7 @@
 # KPPDF 8.0 — Runbook (краткий чеклист)
 
+> ⚠ **Единая база с 2026-10-18:** своей MongoDB у kppdf нет — `kppdf-mongo` и `/var/lib/kppdf80/mongodb` удалены; backend работает с базой `datacore` (контейнер `datacore-mongo`, контур data-core `/opt/data-core`). Факты и правила — [`docs/UNIFIED-DB.md`](../../docs/UNIFIED-DB.md). Ниже упоминания старой Mongo исправлены; если встретишь пропущенное — верь UNIFIED-DB.
+
 > **Старт здесь:** [`README.md`](./README.md)  
 > **Архитектура:** [`DEPLOY.md`](./DEPLOY.md)  
 > **Секреты:** [`CREDENTIALS.md`](./CREDENTIALS.md) (gitignore)  
@@ -16,7 +18,7 @@ https://kppdf-crm.ru → VPS nginx (443) → localhost:4200
                                               │
                     VM 192.168.1.52 (Synology Ubuntu)
                       └─ Docker: kppdf-backend:3000
-                      └─ Docker: kppdf-mongo (4.4, rs0)
+                      └─ MongoDB `datacore` (datacore-mongo, контур data-core) — единая база
 ```
 
 Канон домена: **`kppdf-crm.ru`**.  
@@ -108,7 +110,7 @@ VPN OFF
 3. Templates → Создать → A4 → builder opens
 4. Add one text block → save (no category unavailable)
 5. Texts: create block without categoryId → default «Общее»
-6. Only one deploy at a time; docker ps = kppdf-backend + kppdf-mongo
+6. Only one deploy at a time; docker ps = kppdf-backend (+ datacore-mongo/datacore-backend контура data-core)
 ```
 
 Канон волны: [`docs/STABILIZATION-WAVE-2026-08.md`](../../docs/STABILIZATION-WAVE-2026-08.md).
@@ -141,7 +143,7 @@ LM Studio local helper: [`docs/agents/LM-STUDIO-AGENT.md`](../../docs/agents/LM-
 ```bash
 ssh tiit@192.168.1.52
 cd /opt/kppdf-8.0 && sudo bash backup.sh
-# → /var/lib/kppdf80/backups/...
+# → запускает бэкап data-core → /var/lib/datacore/backups/...
 ```
 
 ### Автоматическое расписание (cron)
@@ -150,7 +152,7 @@ cd /opt/kppdf-8.0 && sudo bash backup.sh
 
 ```bash
 # crontab -e (на самом VM):
-0 3 * * * cd /opt/kppdf-8.0 && bash deploy/synology/backup.sh >> /var/log/kppdf-backup.log 2>&1
+# Отдельный cron kppdf НЕ нужен: единую базу бэкапит data-core (/etc/cron.d/datacore, 03:00)
 ```
 
 Каждую ночь в 03:00. Ротация: старше `BACKUP_RETENTION_DAYS` (дефолт 14) удаляются автоматически.
