@@ -163,6 +163,17 @@ export class DesktopPairingKeyService {
     if (doc.expiresAt && doc.expiresAt.getTime() <= Date.now()) {
       throw new UnauthorizedException('Pairing key expired');
     }
+    // Единая база с data-core (2026-10-18): ключи с ограниченным scope выдаёт data-core,
+    // kppdf их права не понимает → такие ключи здесь не принимаем (иначе дали бы полный доступ).
+    // `scope` нет в схеме kppdf, поэтому читаем из сырого документа (toObject сохраняет поля из БД).
+    const raw = (typeof (doc as { toObject?: unknown }).toObject === 'function'
+      ? (doc as unknown as { toObject: () => Record<string, unknown> }).toObject()
+      : (doc as unknown as Record<string, unknown>)) as { scope?: { access?: string } };
+    if (raw.scope?.access && raw.scope.access !== 'full') {
+      throw new UnauthorizedException(
+        'Ключ с ограниченными правами действует только в API data-core (/db/api)',
+      );
+    }
 
     const user = await this.users.findById(doc.userId.toString());
     if (!user || !user.isActive) {

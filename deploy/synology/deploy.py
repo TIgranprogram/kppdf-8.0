@@ -115,6 +115,17 @@ def resolve_settings(args, cfg):
     ) or os.environ.get("DESKTOP_RECOMMENDED_VERSION")
     app_version = cfg.get("APP_VERSION") or os.environ.get("APP_VERSION")
 
+    # ЕДИНАЯ БАЗА (2026-10-18): kppdf работает с базой datacore (контейнер datacore-mongo,
+    # контур data-core). Своей Mongo нет — без MONGO_URI деплой не запускаем.
+    mongo_uri = cfg.get("MONGO_URI") or os.environ.get("MONGO_URI") or ""
+    if not mongo_uri or "CHANGE_ME" in mongo_uri:
+        fail(
+            "MONGO_URI не задан в config.env. kppdf работает с единой базой datacore: "
+            "mongodb://kppdf:<pw>@datacore-mongo:27017/datacore?directConnection=true&authSource=datacore"
+        )
+    mongo_db = cfg.get("MONGO_DB") or "datacore"
+    shared_uploads_dir = cfg.get("SHARED_UPLOADS_DIR") or "/var/lib/datacore/uploads"
+
     jwt_secret = cfg.get("JWT_SECRET", "")
     jwt_refresh = cfg.get("JWT_REFRESH_SECRET", "")
     admin_password = cfg.get("ADMIN_PASSWORD", "")
@@ -149,6 +160,9 @@ def resolve_settings(args, cfg):
         "desktop_min_version_override": desktop_min_version_override,
         "desktop_recommended_version_override": desktop_recommended_version_override,
         "app_version": app_version,
+        "mongo_uri": mongo_uri,
+        "mongo_db": mongo_db,
+        "shared_uploads_dir": shared_uploads_dir,
         "jwt_secret": jwt_secret,
         "jwt_refresh": jwt_refresh,
         "admin_password": admin_password,
@@ -622,6 +636,10 @@ def make_env_file(settings, desktop_semver=None):
         "CORS_ORIGIN=" + settings["cors"],
         "KPPDF_DATA_DIR=" + settings["data_dir"],
         "TRUST_PROXY=1",
+        # Единая база datacore (см. docker-compose.prod.yml).
+        "MONGO_URI=" + settings["mongo_uri"],
+        "MONGO_DB=" + settings["mongo_db"],
+        "SHARED_UPLOADS_DIR=" + settings["shared_uploads_dir"],
     ]
     if min_version:
         lines.append("DESKTOP_MIN_VERSION=" + min_version)
@@ -687,47 +705,32 @@ def wipe_remote(remote, settings):
 
 
 def wait_for_replica_set(remote, max_wait=60):
-    """After wipe, ensure rs0 is initiated before backend can connect."""
-    log("Waiting for Mongo replica set rs0...")
+    """Единая база: ждём healthy-контейнер datacore-mongo (контур data-core, не наш compose)."""
+    log("Waiting for shared Mongo (datacore-mongo)...")
     for i in range(max_wait // 5):
         status = remote.exec(
-            remote.docker
-            + " exec kppdf-mongo mongo --quiet --eval "
-            + "'try{print(rs.status().ok)}catch(e){print(0)}'",
+            remote.docker + " inspect -f '{{.State.Health.Status}}' datacore-mongo 2>/dev/null",
             timeout=15,
         )
-        if status.strip().startswith("1"):
-            ok("Replica set ready")
+        if status.strip() == "healthy":
+            ok("datacore-mongo healthy")
             return True
         time.sleep(5)
         if i % 2 == 0:
-            log("  rs not ready yet (" + str((i + 1) * 5) + "s)")
-    warn("Replica set not ready — backend may fail to connect")
+            log("  datacore-mongo not healthy yet (" + str((i + 1) * 5) + "s)")
+    warn("datacore-mongo не healthy — подними контур data-core (/opt/data-core)")
     return False
 
 
 # -- Verification helpers -----------------------------------------------
 
 def ensure_mongodb_running(remote, remote_dir):
-    status = remote.exec(remote.docker + " ps --filter name=kppdf-mongo --format '{{.Status}}'")
+    """Единая база: Mongo принадлежит контуру data-core — здесь только проверяем, не стартуем."""
+    status = remote.exec(remote.docker + " ps --filter name=datacore-mongo --format '{{.Status}}'")
     if "Up" in status:
-        ok("MongoDB running")
+        ok("datacore-mongo running")
         return True
-    log("MongoDB not running. Starting...")
-    remote.exec(remote.docker + " start kppdf-mongo")
-    time.sleep(3)
-    status = remote.exec(remote.docker + " ps --filter name=kppdf-mongo --format '{{.Status}}'")
-    if "Up" in status:
-        ok("MongoDB started")
-        return True
-    log("Trying docker compose up...")
-    remote.docker_compose(remote_dir, "up -d mongodb", timeout=60)
-    time.sleep(5)
-    status = remote.exec(remote.docker + " ps --filter name=kppdf-mongo --format '{{.Status}}'")
-    if "Up" in status:
-        ok("MongoDB running via compose")
-        return True
-    warn("MongoDB not running. Seed may fail.")
+    warn("datacore-mongo не запущен — подними контур data-core (/opt/data-core). Seed может упасть.")
     return False
 
 

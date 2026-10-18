@@ -155,6 +155,24 @@ describe('DesktopPairingKeyService (TZD-21)', () => {
     expect(ub.username).toBe('admin');
   });
 
+  it('ключ data-core с ограниченным scope отклоняется, scope full — принимается', async () => {
+    const a = await service.issue(
+      { id: USER_ID, username: 'admin', role: 'admin' },
+      { apiBaseUrl: 'http://127.0.0.1:3000' },
+    );
+    const b = await service.issue(
+      { id: USER_ID, username: 'admin', role: 'admin' },
+      { apiBaseUrl: 'http://127.0.0.1:3000' },
+    );
+    const docA = docs.find((d) => d.id === a.id)!;
+    const docB = docs.find((d) => d.id === b.id)!;
+    docA.scope = { access: 'read', apps: ['shop'] };
+    docB.scope = { access: 'full' };
+    await expect(service.authenticateBearer(a.apiKey)).rejects.toThrow(/ограниченными правами/);
+    const ub = await service.authenticateBearer(b.apiKey);
+    expect(ub.username).toBe('admin');
+  });
+
   it('revoke one key → only that key fails', async () => {
     const a = await service.issue(
       { id: USER_ID, username: 'admin', role: 'admin' },

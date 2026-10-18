@@ -1,40 +1,17 @@
 # KPPDF 8.0 — Production stack (Ubuntu VM on Synology / bare Ubuntu)
 # Canonical public origin: https://kppdf-crm.ru  (set CORS_ORIGIN accordingly)
-# Secrets (JWT_*, ADMIN_PASSWORD) MUST come from host env / .env — no insecure defaults.
+# Secrets (JWT_*, ADMIN_PASSWORD, MONGO_URI) MUST come from host env / .env — no insecure defaults.
 # Health: /api/health/ready (mongo-only) — avoids RSS/disk restart loops on small VMs.
-# Up:   sudo docker compose -f docker-compose.prod.yml up -d --build
-# Logs: sudo docker compose -f docker-compose.prod.yml logs -f backend
+# Up:   docker compose -f docker-compose.prod.yml up -d --build
+# Logs: docker compose -f docker-compose.prod.yml logs -f backend
+#
+# ЕДИНАЯ БАЗА (с 2026-10-18): своей MongoDB у kppdf больше нет. Backend работает с общей
+# базой `datacore` в контейнере `datacore-mongo` (контур /opt/data-core, репозиторий data-core)
+# через docker-сеть `data-core_default`. Mongo-пользователь `kppdf` (readWrite на `datacore`),
+# строка подключения — в .env (MONGO_URI). Загруженные файлы — общая папка data-core.
+# Старые данные kppdf (/var/lib/kppdf80/mongodb) не используются и хранятся для отката.
 
 services:
-  mongo:
-    image: mongo:4.4
-    container_name: kppdf-mongo
-    restart: unless-stopped
-    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
-    ports:
-      - "127.0.0.1:27017:27017"
-    volumes:
-      - ${KPPDF_DATA_DIR}/mongodb:/data/db
-    healthcheck:
-      test: ["CMD", "mongo", "--quiet", "--eval", "db.adminCommand('ping').ok"]
-      interval: 10s
-      timeout: 5s
-      retries: 8
-
-  mongo-init:
-    image: mongo:4.4
-    depends_on:
-      mongo:
-        condition: service_healthy
-    restart: "no"
-    # rs.status() returns {ok:0} (does NOT throw) when unset — must check .ok
-    entrypoint: >-
-      sh -c "mongo --host mongo:27017 --eval
-      'var s=null; try { s=rs.status(); } catch(e) { s={ok:0}; }
-      if (!s || s.ok!==1) {
-        printjson(rs.initiate({_id:\"rs0\", members:[{_id:0, host:\"mongo:27017\"}]}));
-      } else { print(\"rs already ok\"); }'"
-
   backend:
     build:
       context: ./backend
@@ -42,21 +19,21 @@ services:
     container_name: kppdf-backend
     shm_size: "1gb"
     restart: unless-stopped
-    depends_on:
-      mongo:
-        condition: service_healthy
-      mongo-init:
-        condition: service_completed_successfully
     ports:
       - "3000:3000"
+    networks:
+      - default
+      - datacore
     volumes:
       - ./frontend/browser:/app/frontend:ro
-      - ${KPPDF_DATA_DIR}/uploads:/app/uploads
+      # Общие загрузки с data-core: фото/файлы видны обоим приложениям.
+      - ${SHARED_UPLOADS_DIR:-/var/lib/datacore/uploads}:/app/uploads
     environment:
       NODE_ENV: production
       PORT: "3000"
-      MONGO_URI: mongodb://mongo:27017/kppdf?replicaSet=rs0
-      MONGO_DB: kppdf
+      # Пример: mongodb://kppdf:<pw>@datacore-mongo:27017/datacore?directConnection=true&authSource=datacore
+      MONGO_URI: "${MONGO_URI:?MONGO_URI is required (единая база datacore)}"
+      MONGO_DB: "${MONGO_DB:-datacore}"
       MONGO_REPLICA_SET: rs0
       JWT_SECRET: "${JWT_SECRET:?JWT_SECRET is required}"
       JWT_REFRESH_SECRET: "${JWT_REFRESH_SECRET:?JWT_REFRESH_SECRET is required}"
@@ -73,3 +50,8 @@ services:
       timeout: 10s
       retries: 6
       start_period: 40s
+
+networks:
+  datacore:
+    external: true
+    name: data-core_default
