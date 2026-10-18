@@ -26,6 +26,8 @@ data-core API (https://kppdf-crm.ru/db/api, VM :3001, /opt/data-core) ┘       
 5. Пользователи общие: один логин/пароль в kppdf и data-core (JWT-секреты разные — сессии раздельные). Ключи `kppd_`: полный (`full`) работает в обоих API; ключ data-core с ограниченным scope (`read`/`write`) kppdf отклоняет (401) — `backend/src/modules/desktop/desktop-pairing-key.service.ts`.
 6. Миграции/сиды kppdf работают по общей базе: сиды только добавляют недостающее (права, роли) — не пиши сиды/миграции, которые удаляют или переименовывают общие данные.
 
+7. **Склад и снабжение — общие с data-core** (с 2026-10-18): `materials`, `storageitems`, `stockmovements`, `reservations`, `warehouses`, `supplyrequests`, `organizations` пишет ещё и data-core (приложение «Склад · Снабжение» `/db/app/`, синхронизация Google-таблиц). Схемы — общие: копии в `D:\data-core\backend\src\modules\stock\schemas\` и `supply\supply-request.schema.ts`; меняй синхронно. Новые общие поля: `clientUid`, `sheetSource`/`sheetKey`/`syncHash` (+ `notes` у движения, `num`/`requestDate`/`sheetExtra` у заявки). Склад по умолчанию — `warehouses.isDefault`. Подробно — `D:\data-core\docs\UNIFY-SUPPLY-WAREHOUSE.md`.
+
 ## Откат на собственную базу (аварийно)
 
 На VM: вернуть `/opt/kppdf-8.0/.env.bak-premerge` и `docker-compose.prod.yml.bak-premerge`, восстановить дамп `kppdf-premerge-2026-10-18_090145` в новый `kppdf-mongo`, `docker compose -f docker-compose.prod.yml up -d`. Данные, внесённые после 2026-10-18, останутся только в `datacore`.

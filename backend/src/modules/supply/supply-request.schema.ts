@@ -131,6 +131,33 @@ export class SupplyRequest {
   @Prop({ type: Types.ObjectId, ref: 'SupplyTask', index: true })
   linkedSupplyTaskId?: Types.ObjectId;
 
+  /** Номер заявки (как «№» в таблице снабжения). */
+  @Prop({ index: true, sparse: true })
+  num?: number;
+
+  /** Дата заявки (как «Дата» в таблице; createdAt — дата записи в базу). */
+  @Prop({ type: Date })
+  requestDate?: Date;
+
+  /** Колонки таблицы, для которых в схеме ещё нет поля (тип/дата счёта и т.п.) — переносятся как есть. */
+  @Prop({ type: Object })
+  sheetExtra?: Record<string, unknown>;
+
+  // ── Общие поля единой базы (data-core ↔ kppdf), добавлены 2026-10-18 ──
+  /** Ключ записи, созданной клиентом (приложение «Склад · Снабжение», офлайн-очередь) — защита от дублей при повторной отправке. */
+  @Prop({ index: true, sparse: true })
+  clientUid?: string;
+
+  /** Синхронизация Google-таблиц (data-core sheets-sync): откуда строка и её отпечаток. */
+  @Prop({ index: true, sparse: true })
+  sheetSource?: string;
+
+  @Prop()
+  sheetKey?: string;
+
+  @Prop()
+  syncHash?: string;
+
   @Prop({ type: Date, default: null, index: true })
   deletedAt?: Date | null;
 

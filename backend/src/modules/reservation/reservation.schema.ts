@@ -42,6 +42,21 @@ export class Reservation {
   @Prop()
   expiresAt?: Date;
 
+  // ── Общие поля единой базы (data-core ↔ kppdf), добавлены 2026-10-18 ──
+  /** Ключ записи, созданной клиентом (приложение «Склад · Снабжение», офлайн-очередь) — защита от дублей при повторной отправке. */
+  @Prop({ index: true, sparse: true })
+  clientUid?: string;
+
+  /** Синхронизация Google-таблиц (data-core sheets-sync): откуда строка и её отпечаток. */
+  @Prop({ index: true, sparse: true })
+  sheetSource?: string;
+
+  @Prop()
+  sheetKey?: string;
+
+  @Prop()
+  syncHash?: string;
+
   /** TZ-CORE-302: soft-delete timestamp; null = active. */
   @Prop({ type: Date, default: null, index: true })
   deletedAt?: Date | null;
