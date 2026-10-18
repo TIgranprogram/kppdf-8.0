@@ -80,6 +80,18 @@ describe('AppShellComponent (TZ-NX-SHELL-RAILS-ALWAYS)', () => {
   const referenceQuickNav = (): HTMLAnchorElement | null =>
     fixture.nativeElement.querySelector('[data-test="shell-quicknav-reference"]');
 
+  it('шапка: ссылки на другие приложения — «Склад · Снабжение» всем, «База данных» только admin', async () => {
+    await setup('/admin/devices');
+    const q = (t: string): HTMLAnchorElement | null => fixture.nativeElement.querySelector(`[data-test="${t}"]`);
+    expect(q('shell-app-supply')?.getAttribute('href')).toBe('/db/app/');
+    expect(q('shell-app-db-admin')?.getAttribute('href')).toBe('/db/admin/');
+
+    userSig.set({ role: 'manager', username: 'ivan' });
+    fixture.detectChanges();
+    expect(q('shell-app-supply')).toBeTruthy();
+    expect(q('shell-app-db-admin')).toBeNull();
+  });
+
   it('idle route (no setTools) still renders both rails — same 3-column site frame everywhere (TZ-NX-SHELL-RAILS-ALWAYS)', async () => {
     await setup('/admin/devices');
     const grid = fixture.nativeElement.querySelector('[data-test="shell-workspace-grid"]') as HTMLElement;

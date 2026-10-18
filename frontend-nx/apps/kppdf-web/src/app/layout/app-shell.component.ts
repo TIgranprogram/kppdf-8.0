@@ -23,8 +23,10 @@ import {
   ArrowLeft,
   ArrowRight,
   Bell,
+  Database,
   LogOut,
   Monitor,
+  Package,
 } from 'lucide-angular';
 import { AuthService } from '@kppdf/data-access/auth';
 import { CapabilitiesService } from '@kppdf/data-access/capabilities';
@@ -72,6 +74,36 @@ import { ShellToolRailService, type ShellToolRailItem, type ShellToolRailMenuIte
             <span class="block w-[10px] h-[10px] bg-sunrise-warm shrink-0" aria-hidden="true"></span>
             <span class="font-display font-bold tracking-tight truncate">KPPDF · 8.0</span>
           </a>
+
+          @if (isAuthenticated()) {
+            <!-- Другие приложения на той же базе data-core (тот же домен, /db/…). -->
+            <div class="flex items-center gap-1.5 shrink-0" data-test="shell-apps">
+              <a
+                href="/db/app/"
+                class="inline-flex items-center gap-2 shrink-0 h-9 px-2 rounded-sm hairline bg-sunrise-soft text-ink
+                       hover:bg-sunrise-warm/20 transition-colors pi-focus-ring no-underline"
+                aria-label="Склад и снабжение — приложение"
+                title="Склад и снабжение — приложение"
+                data-test="shell-app-supply"
+              >
+                <lucide-angular [img]="supplyAppIcon" [size]="14" class="shrink-0" aria-hidden="true" />
+                <span class="font-display font-bold tracking-tight hidden lg:inline">Склад · Снабжение</span>
+              </a>
+              @if (isAdmin()) {
+                <a
+                  href="/db/admin/"
+                  class="inline-flex items-center gap-2 shrink-0 h-9 px-2 rounded-sm hairline bg-sunrise-soft text-ink
+                         hover:bg-sunrise-warm/20 transition-colors pi-focus-ring no-underline"
+                  aria-label="База данных — админка"
+                  title="База данных — админка"
+                  data-test="shell-app-db-admin"
+                >
+                  <lucide-angular [img]="dbAdminIcon" [size]="14" class="shrink-0" aria-hidden="true" />
+                  <span class="font-display font-bold tracking-tight hidden lg:inline">База данных</span>
+                </a>
+              }
+            </div>
+          }
 
           <nav
             class="flex-1 min-w-0 flex justify-center overflow-x-auto
@@ -433,6 +465,8 @@ export class AppShellComponent {
   protected readonly logOutIcon = LogOut;
   protected readonly bellIcon = Bell;
   protected readonly monitorIcon = Monitor;
+  protected readonly supplyAppIcon = Package;
+  protected readonly dbAdminIcon = Database;
 
   private readonly shellTools = inject(ShellToolRailService);
   protected readonly leftTools = this.shellTools.leftTools;
@@ -476,6 +510,9 @@ export class AppShellComponent {
 
   /** TZD-72 — RBAC: only desktop:admin (or admin wildcard) sees the pairing button. */
   protected readonly canPairDesktop = computed(() => this.caps.hasAny(['desktop:admin']));
+
+  /** Кнопка «База данных» (админка data-core, /db/admin/) — только администратору. */
+  protected readonly isAdmin = computed(() => this.user()?.role === 'admin');
 
   private readonly existingPaths = collectPageRoutePaths(this.router.config);
 
