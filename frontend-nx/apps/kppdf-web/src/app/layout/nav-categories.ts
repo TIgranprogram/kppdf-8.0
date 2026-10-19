@@ -129,7 +129,7 @@ export const NAV_CATEGORIES: readonly NavCategory[] = [
     label: 'Снабжение',
     shortLabel: 'Снабж.',
     icon: ShoppingCart,
-    entryPath: '/supply',
+    entryPath: '/supply-requests',
     items: [
       { path: '/supply-requests', pageKey: 'supply-requests', label: 'Заявки', capabilities: ['procurement:read'] },
       { path: '/supply', pageKey: 'supply', label: 'По заказам', capabilities: ['procurement:read'] },
